@@ -5,10 +5,7 @@ import torch.nn.functional as F
 
 
 class HIEUConfig:
-    """
-    HIEU Configuration - Best performing settings
-    RMSE: 1.0490, MAE: 0.5787 (beats SimpleMoLE)
-    """
+
     def __init__(self):
         # IO
         self.seq_len = 96
