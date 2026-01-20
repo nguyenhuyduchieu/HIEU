@@ -57,3 +57,12 @@ Thumbs.db
 *.pt
 *.pth
 checkpoints/
+
+# Paper files (not for public repo)
+ijcai26.bib
+ijcai26.sty
+main.pdf
+main.tex
+named.bst
+analysis/ablation_study.csv
+analysis/ablation_summary.txt

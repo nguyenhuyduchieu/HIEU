@@ -80,54 +80,199 @@ HIEU/
 └── figures/               # Architecture diagrams
 ```
 
-## 🚀 Quick Start
-
-### Installation
+## 🚀 Installation
 
 ```bash
+# Clone repository
 git clone https://github.com/nguyenhuyduchieu/HIEU.git
 cd HIEU
-pip install torch numpy pandas scikit-learn
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-### Run Benchmark
+### Requirements
+
+- Python >= 3.8
+- PyTorch >= 2.0.0
+- NumPy >= 1.24.0
+- Pandas >= 2.0.0
+- scikit-learn >= 1.3.0
+
+## 🏃 Running Experiments
+
+### Option 1: Run Full Benchmark (All Models)
+
+This runs HIEU + 7 baseline models (Linear, DLinear, NLinear, RLinear, PatchTST, iTransformer, SimpleMoLE):
 
 ```bash
-# Main benchmark (HIEU + 7 baselines)
 python scripts/run_benchmark.py
+```
 
-# Individual models
+Output: `analysis/benchmark_results.csv`
+
+### Option 2: Run Individual Baseline Models
+
+**Autoformer:**
+```bash
 python scripts/run_autoformer_only.py
+```
+
+**FEDformer:**
+```bash
 python scripts/run_fedformer_only.py
 ```
 
-### Train HIEU
+### Option 3: Train HIEU Only
 
 ```python
 import torch
 from models.HIEU.model import HIEUModel, HIEUConfig
 from models.HIEU.multi_asset_loader import create_multiasset_loaders
 
-# Load data
-train_loader, valid_loader, test_loader, _ = create_multiasset_loaders(
+# Step 1: Load multi-asset data
+train_loader, valid_loader, test_loader, scaler = create_multiasset_loaders(
     data_dir='data',
-    symbols=['BTCUSDT', 'ETHUSDT', 'BNBUSDT'],
-    seq_len=96, pred_len=96, batch_size=32
+    symbols=['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
+             'ADAUSDT', 'DOTUSDT', 'LINKUSDT', 'LTCUSDT', 'BCHUSDT',
+             'ATOMUSDT', 'XLMUSDT', 'ETCUSDT', 'VETUSDT', 'TRXUSDT',
+             'FILUSDT', 'UNIUSDT', 'DOGEUSDT', 'XMRUSDT'],
+    seq_len=96,
+    pred_len=96,
+    batch_size=32,
+    use_returns=True,
+    log_returns=True,
+    standardize=True
 )
 
-# Create and train model
+# Step 2: Create HIEU model
 config = HIEUConfig()
-config.num_nodes = 3
-model = HIEUModel(config)
+config.num_nodes = 19        # number of assets
+config.seq_len = 96          # input sequence length
+config.pred_len = 96         # prediction horizon
+config.num_regimes = 4       # Bull/Bear/Volatile/Sideways
+config.regime_dim = 64
+config.graph_hidden = 128
+config.num_bands = 5
+config.linear_rank = 8
 
-optimizer = torch.optim.AdamW(model.parameters(), lr=8e-4)
+model = HIEUModel(config)
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = model.to(device)
+
+# Step 3: Train
+optimizer = torch.optim.AdamW(model.parameters(), lr=8e-4, weight_decay=1e-4)
+criterion = torch.nn.MSELoss()
+
 for epoch in range(50):
+    model.train()
+    total_loss = 0
     for x, y in train_loader:
-        pred = model(x)
-        loss = torch.nn.functional.mse_loss(pred, y)
-        loss.backward()
-        optimizer.step()
+        x, y = x.to(device), y.to(device)
+        
         optimizer.zero_grad()
+        pred = model(x)
+        loss = criterion(pred, y)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
+        
+        total_loss += loss.item()
+    
+    print(f"Epoch {epoch+1}/50, Loss: {total_loss/len(train_loader):.4f}")
+
+# Step 4: Evaluate
+model.eval()
+with torch.no_grad():
+    test_loss = 0
+    for x, y in test_loader:
+        x, y = x.to(device), y.to(device)
+        pred = model(x)
+        test_loss += criterion(pred, y).item()
+    print(f"Test Loss: {test_loss/len(test_loader):.4f}")
+```
+
+### Option 4: Train Individual Baseline Models
+
+**Linear Models (Linear, DLinear, NLinear):**
+```python
+from baseline_models.linear_models import Linear, DLinear, NLinear
+
+class Config:
+    seq_len = 96
+    pred_len = 96
+    enc_in = 19
+    individual = True
+    kernel_size = 25  # for DLinear only
+
+model = DLinear(Config())
+```
+
+**RLinear:**
+```python
+from baseline_models.rlinear_model import RLinearModel
+
+class Config:
+    seq_len = 96
+    pred_len = 96
+    enc_in = 19
+    individual = True
+
+model = RLinearModel(Config())
+```
+
+**PatchTST:**
+```python
+from baseline_models.patchtst_model import PatchTST
+
+class Config:
+    seq_len = 96
+    pred_len = 96
+    enc_in = 19
+    c_out = 19
+    d_model = 64
+    n_heads = 4
+    e_layers = 2
+    d_ff = 128
+    dropout = 0.1
+    fc_dropout = 0.1
+    head_dropout = 0.1
+    patch_len = 16
+    stride = 8
+    padding_patch = 'end'
+    individual = False
+    revin = True
+    affine = True
+    subtract_last = False
+    decomposition = False
+    kernel_size = 25
+
+model = PatchTST(Config())
+```
+
+**iTransformer:**
+```python
+from baseline_models.itransformer_model import iTransformer
+
+class Config:
+    seq_len = 96
+    pred_len = 96
+    enc_in = 19
+    c_out = 19
+    d_model = 64
+    n_heads = 4
+    e_layers = 2
+    d_ff = 128
+    dropout = 0.1
+    factor = 1
+    activation = 'gelu'
+    output_attention = False
+    use_norm = True
+    embed = 'timeF'
+    freq = 'h'
+    class_strategy = 'projection'
+
+model = iTransformer(Config())
 ```
 
 ## 📊 Data
@@ -142,14 +287,27 @@ Minute-level OHLCV data for **19 cryptocurrencies** from Binance (Oct 2020 - Oct
 | ETC | VET | TRX | FIL |
 | UNI | DOGE | XMR | |
 
-## 🏗️ Architecture
+Data format (CSV):
+```
+timestamp,open,high,low,close,volume
+1601510400000,10784.0,10785.0,10780.0,10781.0,123.45
+...
+```
+
+## 🏗️ HIEU Architecture
 
 HIEU consists of four main components:
 
-1. **Regime Encoder** - Detects market regimes via Gumbel-Softmax
-2. **Dynamic Graph** - Learns time-evolving cross-asset correlations  
-3. **Frequency Bank** - Extracts multi-scale temporal patterns
-4. **HyperLinear** - Generates sample-specific prediction weights
+1. **Regime Encoder** - Detects market regimes (Bull/Bear/Volatile/Sideways) via Gumbel-Softmax
+2. **Dynamic Graph** - Learns time-evolving cross-asset correlations using GNN
+3. **Frequency Bank** - Extracts multi-scale temporal patterns via learnable FIR filters
+4. **HyperLinear** - Generates sample-specific low-rank prediction weights conditioned on context
+
+```
+Input (B, L, N) → [Regime Encoder] → regime_emb
+                → [Dynamic Graph]  → graph_emb  → Context Vector → [HyperLinear] → Output (B, H, N)
+                → [Frequency Bank] → freq_emb
+```
 
 ## 📝 Citation
 
