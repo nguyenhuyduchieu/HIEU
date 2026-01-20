@@ -37,26 +37,16 @@ ENV/
 Thumbs.db
 
 # Logs
-logs/
 *.log
 
-# Data - exclude raw data and paper references
-data/
-paper_1/
-paper_2/
-paper_3/
-paper_4/
-data_prepare/
-*.npy
-*.pkl
+# LaTeX auxiliary files
+*.aux
+*.bbl
+*.blg
+*.out
+*.synctex.gz
 
-# Results
-results/
-# Keep analysis CSV files for comparison reports
-# analysis/*.csv
-
-# Temporary and old files
-clean_repo.py
+# Temporary files
 *.bak
 *.tmp
 

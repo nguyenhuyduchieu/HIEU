@@ -1,57 +1,32 @@
 # Analysis Results
 
-This folder contains comparison results, visualizations, and analysis reports for all models.
+This folder contains benchmark results and interpretability analysis for HIEU.
 
-## Multi-Asset Benchmark Results
+## Files
 
-### Main Results
-- **MULTI_ASSET_COMPARISON.md** - Detailed comparison report with rankings
-- **multi_asset_comparison.csv** - Summary results (sorted by RMSE)
-- **multi_asset_benchmark_results.csv** - Raw benchmark results
+- `complete_benchmark_results.csv` - Full benchmark results (all models × all assets × 3 seeds)
+- `ablation_study.csv` - Ablation study results
+- `ablation_summary.txt` - Ablation study summary
+- `regime_analysis.csv` - Market regime analysis (4 regimes discovered)
+- `frequency_importance.csv` - Frequency band importance weights
+- `graph_adjacency.csv` - Learned cross-asset correlation matrix
 
-### Visualizations
-1. **multi_asset_rmse_comparison.png** - RMSE comparison across all models
-2. **multi_asset_mae_comparison.png** - MAE comparison across all models  
-3. **multi_asset_radar_chart_top5.png** - Radar chart for top 5 models
-4. **multi_asset_mae_vs_rmse_scatter.png** - Scatter plot of MAE vs RMSE
+## Benchmark Results Summary
 
-### Key Findings (Multi-Asset)
-- **Best Model**: SimpleMoLE (RMSE: 1.05, MAE: 0.58)
-- **2nd Best**: PatchTST (RMSE: 1.05, MAE: 0.58)
-- **3rd Best**: HIEU (RMSE: 1.05, MAE: 0.58)
-- All top models have very similar performance (RMSE: 1.05-1.06)
+| Rank | Model | MAE | RMSE |
+|------|-------|-----|------|
+| 1 | HIEU | 0.5434±0.0000 | 0.7563±0.0001 |
+| 2 | SimpleMoLE | 0.5445±0.0000 | 0.7571±0.0000 |
+| 3 | iTransformer | 0.5457±0.0001 | 0.7592±0.0002 |
+| 4 | FEDformer | 0.5467±0.0015 | 0.7606±0.0014 |
+| 5 | PatchTST | 0.5476±0.0008 | 0.7617±0.0009 |
+| 6 | Linear | 0.5491±0.0000 | 0.7621±0.0000 |
+| 7 | Autoformer | 0.5662±0.0152 | 0.7810±0.0155 |
 
-## Documentation
+## Regime Analysis
 
-- **HIEU_ARCHITECTURE_ANALYSIS.md** - Detailed analysis of HIEU model architecture
-- **FEATURE_USAGE_ANALYSIS.md** - Analysis of how models use input features
-- **MULTI_ASSET_BENCHMARK_README.md** - Guide for multi-asset benchmark
-
-## Scripts
-
-- **create_multi_asset_comparison.py** - Generate multi-asset comparison report with visualizations
-- **create_final_comparison.py** - Generate final comparison (legacy, for single-asset)
-
-## ⚠️ Important: HIEU Model Results
-
-Trong file `final_model_comparison.csv`, có **2 kết quả của HIEU**:
-
-1. **HIEU (Single Asset)**: MAE=763.34, RMSE=889.05 - **KẾT QUẢ RẤT KÉM**
-   - Đây là kết quả khi chạy HIEU với chỉ 1 asset (BTCUSDT)
-   - **KHÔNG NÊN sử dụng kết quả này để so sánh** vì HIEU không được thiết kế cho single-asset
-
-2. **HIEU (Multi-Asset)**: MAE=0.58, RMSE=1.05 - **KẾT QUẢ TỐT (xếp thứ 2)**
-   - Đây là kết quả khi chạy HIEU với 5 assets (BTC, ETH, BNB, SOL, XRP)
-   - Đây là cách sử dụng **ĐÚNG** của HIEU model
-
-### Tại Sao HIEU Không Tốt Với Single Asset?
-
-HIEU model được thiết kế với các module:
-- **DynamicGraph**: Học mối quan hệ giữa các assets (vô dụng với N=1)
-- **RegimeEncoder**: Phát hiện regime từ multi-asset patterns (thiếu thông tin với N=1)
-- **HyperLinear**: Điều chỉnh predictions dựa trên context từ nhiều assets (context nghèo với N=1)
-
-📖 **Xem chi tiết**: `HIEU_ARCHITECTURE_ANALYSIS.md`
-
-All models were tested on the same prepared data (BTCUSDT) for fair comparison.
-
+HIEU discovers 4 latent market regimes:
+- Regime 0: Bearish/Corrective (negative returns, high volatility)
+- Regime 1: Transitional
+- Regime 2: Sideways/Consolidation
+- Regime 3: Bullish (positive returns, low volatility)

@@ -1,158 +1,173 @@
-# RMIT Time Series Forecasting Project
+<div align="center">
+
+# HIEU
+
+### Regime-Aware Hypernetwork Experts for Explainable Multi-Asset Cryptocurrency Forecasting
+
+[![Paper](https://img.shields.io/badge/Paper-IJCAI%202026-blue)](main.pdf)
+[![Python](https://img.shields.io/badge/Python-3.8+-green.svg)](https://python.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+<img src="plots/HIEU.png" width="800">
+
+</div>
+
+## 📋 Abstract
+
+We propose **HIEU** (**H**ypernetwork-**I**ntegrated **E**xpert **U**nit), a novel architecture that dynamically generates context-conditioned low-rank weight adaptations based on a rich multi-view context vector fusing regime, time-evolving cross-asset graph relationships, and multi-scale frequency patterns. Our approach enables sample-specific, regime-aware forecasting that captures inter-asset dependencies and temporal shifts while remaining parameter-efficient with intrinsic glass-box explainability.
+
+## ✨ Key Features
+
+- 🎯 **Regime-Aware**: Automatically detects market regimes (Bull/Bear/Volatile/Sideways)
+- 📊 **Multi-Asset**: Jointly forecasts 19 cryptocurrency assets with cross-asset dependencies  
+- 🔍 **Explainable**: Glass-box interpretability through regime attention and dynamic graphs
+
+## 📈 Results
+
+HIEU achieves **state-of-the-art** performance across all 19 cryptocurrency assets:
+
+| Rank | Model | MAE | RMSE | Interpretable |
+|:----:|-------|:---:|:----:|:-------------:|
+| 🥇 | **HIEU** | **0.5434±0.0000** | **0.7563±0.0001** | ✅ |
+| 🥈 | SimpleMoLE | 0.5445±0.0000 | 0.7571±0.0000 | ❌ |
+| 🥉 | iTransformer | 0.5457±0.0001 | 0.7592±0.0002 | ❌ |
+| 4 | FEDformer | 0.5467±0.0015 | 0.7606±0.0014 | ❌ |
+| 5 | PatchTST | 0.5476±0.0008 | 0.7617±0.0009 | ❌ |
+| 6 | Linear | 0.5491±0.0000 | 0.7621±0.0000 | ❌ |
+| 7 | DLinear | 0.5493±0.0001 | 0.7623±0.0001 | ❌ |
+| 8 | RLinear | 0.5521±0.0000 | 0.7656±0.0000 | ❌ |
+| 9 | NLinear | 0.5524±0.0000 | 0.7660±0.0000 | ❌ |
+| 10 | Autoformer | 0.5662±0.0152 | 0.7810±0.0155 | ❌ |
+
+<p align="center">
+<img src="plots/barplot.png" width="45%">
+<img src="plots/boxplot.png" width="45%">
+</p>
+
+## 🔬 Visualizations
+
+<p align="center">
+<img src="plots/regime.png" width="45%">
+<img src="plots/candle.png" width="45%">
+</p>
+
+<p align="center">
+<img src="plots/lineplot.png" width="45%">
+<img src="plots/energy.png" width="45%">
+</p>
+
+## 📁 Repository Structure
+
+```
+HIEU/
+├── data/                   # Cryptocurrency OHLCV data (19 assets)
+├── models/
+│   └── HIEU/              # HIEU model implementation
+│       ├── model.py       # Main model architecture
+│       ├── configs.py     # Model configurations
+│       └── modules/       # Model components
+├── baseline_models/        # Baseline implementations
+│   ├── linear_models.py   # Linear, DLinear, NLinear
+│   ├── rlinear_model.py   # RLinear
+│   ├── patchtst_model.py  # PatchTST
+│   ├── itransformer_model.py  # iTransformer
+│   ├── Autoformer/        # Autoformer
+│   └── FEDformer/         # FEDformer
+├── scripts/               # Benchmark scripts
+├── analysis/              # Results & analysis
+├── plots/                 # Paper figures
+└── figures/               # Architecture diagrams
+```
 
 ## 🚀 Quick Start
 
-### 1. Prepare Data (Bắt buộc trước khi chạy models)
+### Installation
 
 ```bash
-# Prepare data cho tất cả datasets
-python data_prepare/prepare_data.py
-
-# Hoặc prepare cho specific datasets
-python data_prepare/prepare_data.py --datasets BTCUSDT ETHUSDT
-
-# Giới hạn số samples để test nhanh
-python data_prepare/prepare_data.py --max_samples 5000
+git clone https://github.com/nguyenhuyduchieu/HIEU.git
+cd HIEU
+pip install torch numpy pandas scikit-learn
 ```
 
-### 2. Chạy Benchmarks
+### Run Benchmark
 
 ```bash
-# Single-Asset Benchmark (tất cả models dùng cùng prepared data)
-python scripts/run_unified_benchmark.py
+# Main benchmark (HIEU + 7 baselines)
+python scripts/run_benchmark.py
 
-# Multi-Asset Benchmark (5 cryptocurrencies: BTC, ETH, BNB, SOL, XRP)
-python scripts/run_multi_asset_benchmark.py
+# Individual models
+python scripts/run_autoformer_only.py
+python scripts/run_fedformer_only.py
 ```
 
-## Cấu trúc thư mục
+### Train HIEU
 
-Dự án đã được tổ chức lại thành các thư mục chính sau:
+```python
+import torch
+from models.HIEU.model import HIEUModel, HIEUConfig
+from models.HIEU.multi_asset_loader import create_multiasset_loaders
 
-### 📁 `baseline_models/`
-Chứa các model baseline để so sánh:
-- `linear_models.py` - Linear, DLinear, NLinear, RLinear
-- `transformer_models.py` - PatchTST, iTransformer, VanillaTransformer
-- `autoformer_model.py` - Autoformer model
-- `prophet_model.py` - Prophet model
-- `rlinear_model.py` - RLinear model implementation
-- `itransformer_model.py` - iTransformer model
-- `patchtst_model.py` - PatchTST model
-- `vanilla_transformer_model.py` - Vanilla Transformer model
-- `crypto_ltsf_linear.py` - Crypto LTSF Linear implementation
+# Load data
+train_loader, valid_loader, test_loader, _ = create_multiasset_loaders(
+    data_dir='data',
+    symbols=['BTCUSDT', 'ETHUSDT', 'BNBUSDT'],
+    seq_len=96, pred_len=96, batch_size=32
+)
 
-### 📁 `models/`
-Chứa các model chính (proposed models):
-- `HIEU/` - HIEU model implementation
-- `mole_rl.py` - RL-gated Mixture-of-RLinear Experts (MoLE)
-- `mole_trainer.py` - MoLE trainer với offline RL
-- `revin.py` - RevIN normalization module
+# Create and train model
+config = HIEUConfig()
+config.num_nodes = 3
+model = HIEUModel(config)
 
-### 📁 `scripts/`
-Chứa tất cả các script để chạy experiments và tests:
-- `run_unified_benchmark.py` - **Main single-asset benchmark** (tất cả models dùng cùng prepared data)
-- `run_multi_asset_benchmark.py` - **Multi-asset benchmark** (5 cryptocurrencies)
-- `test_hieu_multi_asset.py` - Test HIEU model với multi-asset data
-- `test_simple_mole.py` - SimpleMoLE model definition
-
-### 📁 `analysis/`
-Chứa các file so sánh và phân tích kết quả cuối cùng:
-- `MULTI_ASSET_COMPARISON.md` - Báo cáo so sánh multi-asset benchmark
-- `multi_asset_comparison.csv` - Kết quả multi-asset benchmark
-- `multi_asset_*.png` - Visualizations cho multi-asset results
-- `HIEU_ARCHITECTURE_ANALYSIS.md` - Phân tích chi tiết về HIEU model
-- `FEATURE_USAGE_ANALYSIS.md` - Phân tích cách models sử dụng features
-- `create_multi_asset_comparison.py` - Script tạo multi-asset comparison report
-
-### 📁 `src/`
-Chứa các utilities và configs:
-- `configs/` - Model configurations
-- `data/` - Data preprocessing và dataset utilities
-- `experiments/` - Experiment framework
-- `utils/` - Utility functions
-
-### 📁 `data/`
-Chứa dữ liệu crypto raw (CSV files)
-
-### 📁 `data_prepare/`
-Chứa scripts để prepare data thống nhất cho tất cả models:
-- `prepare_data.py` - Script để prepare và lưu data đã xử lý
-- `load_prepared_data.py` - Script để load prepared data
-- `{dataset_name}/` - Prepared data cho từng dataset (sau khi chạy prepare_data.py)
-
-### 📁 `paper_1/`, `paper_2/`, `paper_3/`, `paper_4/`
-Chứa code từ các papers tham khảo
-
-## Cách sử dụng
-
-### ⚠️ QUAN TRỌNG: Prepare Data trước
-
-**Tất cả models bây giờ sử dụng cùng prepared data để đảm bảo fair comparison.**
-
-1. **Prepare data** (chỉ cần chạy 1 lần):
-```bash
-python data_prepare/prepare_data.py --datasets BTCUSDT
+optimizer = torch.optim.AdamW(model.parameters(), lr=8e-4)
+for epoch in range(50):
+    for x, y in train_loader:
+        pred = model(x)
+        loss = torch.nn.functional.mse_loss(pred, y)
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
 ```
 
-2. **Chạy unified benchmark** (tất cả models dùng cùng data):
-```bash
-python scripts/run_unified_benchmark.py
+## 📊 Data
+
+Minute-level OHLCV data for **19 cryptocurrencies** from Binance (Oct 2020 - Oct 2025):
+
+| | | | |
+|---|---|---|---|
+| BTC | ETH | BNB | SOL |
+| XRP | ADA | DOT | LINK |
+| LTC | BCH | ATOM | XLM |
+| ETC | VET | TRX | FIL |
+| UNI | DOGE | XMR | |
+
+## 🏗️ Architecture
+
+HIEU consists of four main components:
+
+1. **Regime Encoder** - Detects market regimes via Gumbel-Softmax
+2. **Dynamic Graph** - Learns time-evolving cross-asset correlations  
+3. **Frequency Bank** - Extracts multi-scale temporal patterns
+4. **HyperLinear** - Generates sample-specific prediction weights
+
+## 📝 Citation
+
+```bibtex
+@inproceedings{hieu2026,
+  title={HIEU: Regime-Aware Hypernetwork Experts for Explainable Multi-Asset Cryptocurrency Forecasting},
+  author={Nguyen, Huy Duc Hieu},
+  booktitle={IJCAI},
+  year={2026}
+}
 ```
 
-### Xem kết quả so sánh:
-```bash
-# Multi-asset benchmark results
-cat analysis/MULTI_ASSET_COMPARISON.md
-cat analysis/multi_asset_comparison.csv
+## 📄 License
 
-# Generate comparison report với visualizations
-python analysis/create_multi_asset_comparison.py
-```
+This project is licensed under the MIT License.
 
-## Data Preparation
+---
 
-### Format Data:
-- **Input**: `[batch, seq_len, features]` - Tất cả features (~40+ technical indicators)
-- **Target**: `[batch, pred_len, 1]` - Chỉ Close price (feature index 0)
-- **Preprocessing**: Resample 15-min, add technical indicators, standardize
-- **Split**: Train (<=2023), Valid (2024), Test (2025)
-
-### Prepared Data Location:
-Sau khi chạy `prepare_data.py`, data được lưu trong:
-```
-data_prepare/{dataset_name}/
-├── train_data.npy
-├── valid_data.npy
-├── test_data.npy
-├── scaler.pkl
-├── metadata.pkl
-└── feature_names.txt
-```
-
-## Benchmark Results
-
-### Single-Asset Benchmark (BTCUSDT)
-- **Best Model**: iTransformer (RMSE: 0.56, MAE: 0.41)
-- **Best Linear**: PatchTST (RMSE: 21.20)
-- Results: See `analysis/` folder
-
-### Multi-Asset Benchmark (5 cryptocurrencies)
-- **Best Model**: SimpleMoLE (RMSE: 1.05, MAE: 0.58)
-- **HIEU Model**: RMSE: 1.05, MAE: 0.58 (xếp thứ 3)
-- Results: See `analysis/MULTI_ASSET_COMPARISON.md`
-
-## Important Notes
-
-- **HIEU Model**: Designed for **multi-asset forecasting**, NOT single-asset
-  - Single-asset: MAE=763.34 ❌ (very poor)
-  - Multi-asset: MAE=0.58 ✅ (excellent)
-- **Data Preparation**: Chạy `prepare_data.py` trước khi chạy single-asset benchmark
-- **Multi-Asset Data**: Uses log returns of Close prices, automatically prepared by `run_multi_asset_benchmark.py`
-- All results saved in `analysis/` folder
-- Logs saved in `logs/` folder
-
-## Documentation
-
-- **HIEU Model**: See `models/HIEU/TECHNICAL_README.md` for comprehensive technical documentation
-- **Architecture Analysis**: See `analysis/HIEU_ARCHITECTURE_ANALYSIS.md`
-- **Feature Usage**: See `analysis/FEATURE_USAGE_ANALYSIS.md`
+<div align="center">
+Made with ❤️ for IJCAI 2026
+</div>
